@@ -1,0 +1,14 @@
+{
+    "name": "slack-enchanter",
+    "version": "0.1.0",
+    "description": "slack-enchanter",
+    "permissions": ["scripting"],
+    "host_permissions": ["*://*/*"],
+    "manifest_version": 3,
+    "content_scripts": [
+      {
+        "matches": ["*://*/*"],
+        "js": ["slackEnchanter.js"]
+      }
+    ]
+  }
