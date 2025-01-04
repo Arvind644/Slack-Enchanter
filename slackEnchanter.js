@@ -89,12 +89,10 @@ const addButtonsToToolbar = () => {
   };
 
   const correctMessage =
-    "Fix any spelling or grammar errors in the following message. " +
-    "Only include the corrected message in the response.";
+    "Correct all spelling, grammar, and punctuation errors in the following text. Provide the corrected version only, without any additional comments or preambles.";
 
   const professionalMessage =
-    "Convert the following message to a more professional tone. " +
-    "Only include the transformed message in the response.";
+    "Rephrase the following message to reflect a formal and professional tone suitable for a corporate setting. Return only the updated text without any prefatory remarks.";
 
   toolbar.appendChild(createButton("Correct", correctMessage));
   toolbar.appendChild(createButton("Professional", professionalMessage));
