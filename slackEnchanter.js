@@ -94,8 +94,12 @@ const addButtonsToToolbar = () => {
   const professionalMessage =
     "Rephrase the following message to reflect a formal and professional tone suitable for a corporate setting. Return only the updated text without any prefatory remarks.";
 
+    const translateMessage =
+    "Translate the following message to English. Return only the translated text without any prefatory remarks.";
+
   toolbar.appendChild(createButton("Correct", correctMessage));
   toolbar.appendChild(createButton("Professional", professionalMessage));
+  toolbar.appendChild(createButton("Translate", translateMessage));
 };
 
 const init = () => {
