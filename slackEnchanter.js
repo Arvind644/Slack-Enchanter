@@ -1,4 +1,4 @@
-const GROQ_API_KEY = "YOUR_API_KEY";
+const GROQ_API_KEY = "";
 
 function generateIcon() {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -23,83 +23,113 @@ function generateIcon() {
   return svg;
 }
 
-const generateMessage = (systemMessage) => {
-  const messageElement = document.querySelector("[contenteditable].ql-editor")?.children[0];
+const generateMessage = async (systemMessage) => {
+  const messageInput = document.querySelector("[data-qa='message_input']");
+  if (!messageInput) return;
 
-  if (!messageElement || !messageElement.innerText.trim()) {
-    console.warn("Message element is empty or not found.");
-    return;
-  }
+  const text = messageInput.value;
+  if (!text) return;
 
-  const requestData = {
-    messages: [
-      { role: "system", content: systemMessage },
-      { role: "user", content: messageElement.innerText.trim() },
-    ],
-    model: "llama3-70b-8192",
-  };
-
-  fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${GROQ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestData),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.statusText}`);
+  try {
+    chrome.storage.sync.get(['groqApiKey'], async function(result) {
+      if (!result.groqApiKey) {
+        alert('Please set your GROQ API key in the extension settings');
+        return;
       }
-      return response.json();
-    })
-    .then((data) => {
-      const newContent = data?.choices?.[0]?.message?.content;
-      if (newContent) {
-        messageElement.innerHTML = newContent;
-      } else {
-        console.warn("No content received in the response.");
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching data:", error);
+
+      // Use the stored API key for GROQ API calls
+      const apiKey = result.groqApiKey;
+      const requestData = {
+        messages: [
+          { role: "system", content: systemMessage },
+          { role: "user", content: text },
+        ],
+        model: "llama3-70b-8192",
+      };
+
+      fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          const newContent = data?.choices?.[0]?.message?.content;
+          if (newContent) {
+            messageInput.value = newContent;
+          } else {
+            console.warn("No content received in the response.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        });
     });
+  } catch (error) {
+    console.error('Error:', error);
+  }
 };
 
 const addButtonsToToolbar = () => {
   const toolbar = document.querySelector(".c-texty_buttons");
   if (!toolbar) return;
 
-  const createButton = (text, systemMessage) => {
-    const wrapper = document.createElement("div");
-    wrapper.style.display = "flex";
-    wrapper.style.alignItems = "center";
-    wrapper.style.marginRight = "10px";
+  // Get custom buttons from storage
+  chrome.storage.sync.get(['customButtons'], function(result) {
+    const customButtons = result.customButtons || [];
+    
+    const createButton = (text, systemMessage) => {
+      const wrapper = document.createElement("div");
+      wrapper.style.display = "flex";
+      wrapper.style.alignItems = "center";
+      wrapper.style.marginRight = "10px";
 
-    const button = document.createElement("button");
-    button.innerText = text;
-    button.style.marginLeft = "5px";
+      const button = document.createElement("button");
+      button.innerText = text;
+      button.style.marginLeft = "5px";
 
-    button.addEventListener("click", () => generateMessage(systemMessage));
+      button.addEventListener("click", () => generateMessage(systemMessage));
 
-    wrapper.appendChild(generateIcon());
-    wrapper.appendChild(button);
+      wrapper.appendChild(generateIcon());
+      wrapper.appendChild(button);
 
-    return wrapper;
-  };
+      return wrapper;
+    };
 
-  const correctMessage =
-    "Correct all spelling, grammar, and punctuation errors in the following text. Provide the corrected version only, without any additional comments or preambles.";
+    // Default buttons
+    const defaultButtons = [
+      {
+        text: "Correct",
+        prompt: "Correct all spelling, grammar, and punctuation errors in the following text. Provide the corrected version only, without any additional comments or preambles."
+      },
+      {
+        text: "Professional",
+        prompt: "Rephrase the following message to reflect a formal and professional tone suitable for a corporate setting. Return only the updated text without any prefatory remarks."
+      },
+      {
+        text: "Translate",
+        prompt: "Translate the following message to English. Return only the translated text without any prefatory remarks."
+      }
+    ];
 
-  const professionalMessage =
-    "Rephrase the following message to reflect a formal and professional tone suitable for a corporate setting. Return only the updated text without any prefatory remarks.";
+    // Add default buttons
+    defaultButtons.forEach(btn => {
+      toolbar.appendChild(createButton(btn.text, btn.prompt));
+    });
 
-    const translateMessage =
-    "Translate the following message to English. Return only the translated text without any prefatory remarks.";
-
-  toolbar.appendChild(createButton("Correct", correctMessage));
-  toolbar.appendChild(createButton("Professional", professionalMessage));
-  toolbar.appendChild(createButton("Translate", translateMessage));
+    // Add custom buttons
+    customButtons.forEach(btn => {
+      toolbar.appendChild(createButton(btn.text, btn.prompt));
+    });
+  });
 };
 
 const init = () => {

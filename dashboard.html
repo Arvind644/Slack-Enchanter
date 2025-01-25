@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SlackEnchanter Dashboard</title>
+    <style>
+        body {
+            width: 500px;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .button-list {
+            margin: 20px 0;
+        }
+        .button-item {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        .button-controls {
+            float: right;
+        }
+        .button-controls span {
+            margin-left: 12px;
+            cursor: pointer;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .edit-btn {
+            color: #2196F3;
+            background-color: #e3f2fd;
+        }
+        .reset-btn {
+            color: #ff9800;
+            background-color: #fff3e0;
+        }
+        .delete-btn {
+            color: #f44336;
+            background-color: #ffebee;
+        }
+        .button-controls span:hover {
+            opacity: 0.8;
+        }
+        .default-badge {
+            background-color: #e8eaf6;
+            color: #3f51b5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        .prompt-text {
+            color: #666;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .button-edit-form {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        input, textarea {
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .edit-form-buttons {
+            margin-top: 10px;
+        }
+        .edit-form-buttons button {
+            margin-right: 10px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .save-edit {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .cancel-edit {
+            background-color: #f5f5f5;
+        }
+        .api-key-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .section-divider {
+            margin: 30px 0;
+            border-top: 1px solid #dee2e6;
+        }
+        .restore-defaults-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .default-buttons-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .restore-default-btn {
+            background-color: #e3f2fd;
+            color: #2196F3;
+            border: 1px solid #90caf9;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .restore-default-btn:hover {
+            background-color: #bbdefb;
+        }
+    </style>
+</head>
+<body>
+    <h2>SlackEnchanter Settings</h2>
+
+    <div class="api-key-section">
+        <h3>GROQ API Configuration</h3>
+        <input type="password" id="groqApiKey" placeholder="Enter GROQ API Key">
+        <button id="saveApiKey">Save API Key</button>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <h3>Manage Buttons</h3>
+    <div class="button-list"></div>
+    
+    <h3>Add New Button</h3>
+    <input type="text" id="buttonName" placeholder="Button Name">
+    <textarea id="promptText" placeholder="Enter prompt text" rows="4"></textarea>
+    <button id="addButton">Add Button</button>
+
+    <script src="dashboard.js"></script>
+</body>
+</html> 
