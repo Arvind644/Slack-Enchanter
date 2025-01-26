@@ -25,10 +25,17 @@ function generateIcon() {
 
 const generateMessage = async (systemMessage) => {
   const messageInput = document.querySelector("[data-qa='message_input']");
-  if (!messageInput) return;
+  const richTextInput = messageInput.querySelector('[contenteditable="true"]');
+  if (!richTextInput) {
+    console.log('Rich text input not found');
+    return;
+  }
 
-  const text = messageInput.value;
-  if (!text) return;
+  const text = richTextInput.textContent;
+  if (!text) {
+    alert('Please enter some text first');
+    return;
+  }
 
   try {
     chrome.storage.sync.get(['groqApiKey'], async function(result) {
@@ -37,44 +44,68 @@ const generateMessage = async (systemMessage) => {
         return;
       }
 
-      // Use the stored API key for GROQ API calls
-      const apiKey = result.groqApiKey;
-      const requestData = {
-        messages: [
-          { role: "system", content: systemMessage },
-          { role: "user", content: text },
-        ],
-        model: "llama3-70b-8192",
-      };
+      const originalText = text;
+      richTextInput.textContent = "Generating...";
 
-      fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestData),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          const newContent = data?.choices?.[0]?.message?.content;
-          if (newContent) {
-            messageInput.value = newContent;
-          } else {
-            console.warn("No content received in the response.");
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching data:", error);
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${result.groqApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: "mixtral-8x7b-32768",
+            messages: [
+              {
+                role: "system",
+                content: systemMessage
+              },
+              {
+                role: "user",
+                content: text
+              }
+            ],
+            temperature: 0.5,
+            max_tokens: 1024
+          })
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const generatedText = data.choices[0].message.content;
+
+        // Update the rich text input
+        richTextInput.textContent = generatedText;
+        
+        // Create and dispatch necessary events to update Slack's internal state
+        const inputEvent = new InputEvent('input', { bubbles: true });
+        richTextInput.dispatchEvent(inputEvent);
+        
+        // Create a keyboard event to simulate typing
+        const keyEvent = new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          key: 'Process',
+          code: 'Process'
+        });
+        richTextInput.dispatchEvent(keyEvent);
+        
+        // Focus the input to ensure Slack recognizes the change
+        richTextInput.focus();
+
+      } catch (error) {
+        console.error('Error:', error);
+        richTextInput.textContent = originalText;
+        alert('Error generating message. Please check your API key and try again.');
+      }
     });
   } catch (error) {
     console.error('Error:', error);
+    alert('Error accessing storage. Please try again.');
   }
 };
 
@@ -82,64 +113,72 @@ const addButtonsToToolbar = () => {
   const toolbar = document.querySelector(".c-texty_buttons");
   if (!toolbar) return;
 
-  // Get custom buttons from storage
+  // Remove any existing enchanter buttons
+  const existingButtons = toolbar.querySelectorAll(".enchanter-button");
+  existingButtons.forEach(button => button.remove());
+
   chrome.storage.sync.get(['customButtons'], function(result) {
-    const customButtons = result.customButtons || [];
+    const buttons = result.customButtons || [];
     
-    const createButton = (text, systemMessage) => {
+    const createButton = (text, prompt) => {
       const wrapper = document.createElement("div");
+      wrapper.className = "enchanter-button";
       wrapper.style.display = "flex";
       wrapper.style.alignItems = "center";
       wrapper.style.marginRight = "10px";
 
       const button = document.createElement("button");
       button.innerText = text;
-      button.style.marginLeft = "5px";
+      button.className = "c-button-unstyled c-texty_button";
+      button.style.padding = "0 8px";
+      button.style.height = "26px";
+      button.style.minWidth = "36px";
+      button.style.borderRadius = "4px";
+      button.style.fontSize = "13px";
+      button.style.fontWeight = "bold";
+      button.style.backgroundColor = "#ffffff";
+      button.style.border = "1px solid #dddddd";
+      button.style.cursor = "pointer";
 
-      button.addEventListener("click", () => generateMessage(systemMessage));
+      button.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        generateMessage(prompt);
+      };
 
-      wrapper.appendChild(generateIcon());
       wrapper.appendChild(button);
-
       return wrapper;
     };
 
-    // Default buttons
-    const defaultButtons = [
-      {
-        text: "Correct",
-        prompt: "Correct all spelling, grammar, and punctuation errors in the following text. Provide the corrected version only, without any additional comments or preambles."
-      },
-      {
-        text: "Professional",
-        prompt: "Rephrase the following message to reflect a formal and professional tone suitable for a corporate setting. Return only the updated text without any prefatory remarks."
-      },
-      {
-        text: "Translate",
-        prompt: "Translate the following message to English. Return only the translated text without any prefatory remarks."
-      }
-    ];
-
-    // Add default buttons
-    defaultButtons.forEach(btn => {
-      toolbar.appendChild(createButton(btn.text, btn.prompt));
-    });
-
-    // Add custom buttons
-    customButtons.forEach(btn => {
+    buttons.forEach(btn => {
       toolbar.appendChild(createButton(btn.text, btn.prompt));
     });
   });
 };
 
-const init = () => {
-  const interval = setInterval(() => {
-    const toolbar = document.querySelector(".c-texty_buttons");
-    if (toolbar) {
-      clearInterval(interval);
-      addButtonsToToolbar();
-    }
-  }, 1000);
-};
+// Update the observer to be more specific
+const observer = new MutationObserver((mutations) => {
+  const toolbar = document.querySelector(".c-texty_buttons");
+  if (toolbar && !toolbar.querySelector(".enchanter-button")) {
+    addButtonsToToolbar();
+    // Disconnect and reconnect the observer to prevent multiple triggers
+    observer.disconnect();
+    setTimeout(() => {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }, 1000);
+  }
+});
 
-init();
+// Start observing
+observer.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
+
+// Initial check for toolbar
+if (document.querySelector(".c-texty_buttons")) {
+  addButtonsToToolbar();
+}

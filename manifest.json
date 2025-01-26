@@ -2,8 +2,14 @@
     "name": "slack-enchanter",
     "version": "0.1.0",
     "description": "slack-enchanter",
-    "permissions": ["scripting", "storage"],
-    "host_permissions": ["*://*/*"],
+    "permissions": [
+      "storage",
+      "activeTab"
+    ],
+    "host_permissions": [
+      "https://api.groq.com/*",
+      "https://*.slack.com/*"
+    ],
     "manifest_version": 3,
     "content_scripts": [
       {
