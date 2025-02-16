@@ -1,6 +1,11 @@
-# Slack Enchanter
+https://github.com/user-attachments/assets/27d936dc-2ee9-4cca-9dfa-654a82e3a054
 
-Slack Enchanter is a Chrome extension that enhances your Slack messaging experience by adding customizable AI-powered message generation buttons to your Slack interface. Using the GROQ API, it helps you quickly transform and improve your messages.
+<div align="center">
+<h1 align="center">
+  	$${\color{blue}Slack Enchanter}$$
+</h1>
+<p>Slack Enchanter is a Chrome extension that enhances your Slack messaging experience by adding customizable AI-powered message generation buttons to your Slack interface. Using the GROQ API, it helps you quickly transform and improve your messages.</p>
+</div>
 
 ## Features
 
